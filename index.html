@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>InterviewIQ Portal | KES</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { background: #0f1117; color: #fff; font-family: 'Inter', -apple-system, sans-serif; margin: 0; }
+    .gradient-text { background: linear-gradient(90deg, #06b6d4, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .score-bar-fill { background: linear-gradient(90deg, #06b6d4, #3b82f6); height: 8px; border-radius: 9999px; transition: width 0.8s ease; }
+    .card { background: #161b27; border: 1px solid #1f2937; border-radius: 12px; }
+    .btn-primary { background: linear-gradient(90deg, #06b6d4, #3b82f6); color: white; border: none; cursor: pointer; font-weight: 600; border-radius: 8px; padding: 10px 20px; }
+    .btn-primary:hover { opacity: 0.9; }
+    .sidebar-link { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 14px; color: #9ca3af; transition: all 0.15s; text-decoration: none; }
+    .sidebar-link:hover { color: white; background: #1f2937; }
+    .sidebar-link.active { color: #06b6d4; background: rgba(6,182,212,0.1); font-weight: 600; }
+    .spinner { width: 40px; height: 40px; border: 3px solid #1f2937; border-top-color: #06b6d4; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .tag-monthly { background: rgba(6,182,212,0.15); color: #06b6d4; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+    .tag-pro { background: rgba(168,85,247,0.15); color: #a855f7; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+    .interview-row:hover { border-color: rgba(6,182,212,0.4) !important; cursor: pointer; }
+    input[type="email"] { background: #1f2937; border: 1px solid #374151; color: white; border-radius: 8px; padding: 12px 16px; width: 100%; font-size: 15px; outline: none; }
+    input[type="email"]:focus { border-color: #06b6d4; }
+    input[type="email"]::placeholder { color: #6b7280; }
+    .tab-btn { padding: 8px 18px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; }
+    .tab-btn.active { background: #06b6d4; color: white; }
+    .tab-btn:not(.active) { background: #1f2937; color: #9ca3af; }
+    .tab-btn:not(.active):hover { color: white; }
+    .status-top { color: #10b981; }
+    .status-strong { color: #06b6d4; }
+    .status-good { color: #f59e0b; }
+    .status-needs { color: #ef4444; }
+    .pro-banner { background: linear-gradient(135deg, #0f1f35, #150a2e); border: 1px solid rgba(168,85,247,0.3); border-radius: 12px; }
+  </style>
+</head>
+<body>
+
+<!-- LOADING SCREEN -->
+<div id="loading" style="min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;">
+  <div class="spinner"></div>
+  <p style="color:#6b7280;font-size:14px;">Loading your portal...</p>
+</div>
+
+<!-- LOGIN PAGE -->
+<div id="login-page" style="display:none;min-height:100vh;align-items:center;justify-content:center;">
+  <div style="width:100%;max-width:420px;padding:24px;">
+    <div style="text-align:center;margin-bottom:40px;">
+      <div style="margin-bottom:12px;">
+        <span style="color:#06b6d4;font-weight:800;font-size:22px;">KES</span>
+        <span style="color:#6b7280;margin:0 8px;">/</span>
+        <span style="font-weight:700;font-size:22px;">InterviewIQ</span>
+      </div>
+      <h1 style="font-size:28px;font-weight:700;margin:0 0 8px;">Member Portal</h1>
+      <p style="color:#6b7280;font-size:15px;margin:0;">Enter your email to receive a magic sign-in link.</p>
+    </div>
+
+    <div id="login-form-wrap">
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:13px;color:#9ca3af;margin-bottom:6px;font-weight:500;">Email address</label>
+        <input type="email" id="login-email" placeholder="you@example.com" autocomplete="email" />
+      </div>
+      <button class="btn-primary" id="login-btn" style="width:100%;padding:13px;font-size:15px;" onclick="sendMagicLink()">
+        Send Magic Link
+      </button>
+      <p id="login-error" style="color:#ef4444;font-size:13px;margin-top:10px;display:none;"></p>
+    </div>
+
+    <div id="login-success" style="display:none;text-align:center;padding:24px;background:#0d1f0f;border:1px solid #166534;border-radius:12px;">
+      <div style="font-size:36px;margin-bottom:12px;">ð¬</div>
+      <h2 style="font-size:18px;font-weight:700;color:#4ade80;margin:0 0 8px;">Check your inbox</h2>
+      <p style="color:#86efac;font-size:14px;margin:0;">We sent a sign-in link to <strong id="sent-email"></strong>. Click it to access your portal.</p>
+    </div>
+
+    <p style="text-align:center;color:#4b5563;font-size:13px;margin-top:32px;">
+      Only InterviewIQ subscribers can access this portal.<br/>
+      <a href="https://kestechgroup.com/interviewiq" style="color:#06b6d4;text-decoration:none;">Learn more â</a>
+    </p>
+  </div>
+</div>
+
+<!-- MAIN PORTAL -->
+<div id="portal" style="display:none;">
+
+  <!-- Top Nav -->
+  <nav style="border-bottom:1px solid #1f2937;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#0f1117;z-index:100;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span style="color:#06b6d4;font-weight:800;font-size:18px;">KES</span>
+      <span style="color:#374151;">/</span>
+      <span style="font-weight:700;font-size:16px;">InterviewIQ</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span id="nav-plan-badge" class="tag-monthly">Monthly</span>
+      <span id="nav-pro-badge" class="tag-pro" style="display:none;">Pro â¦</span>
+      <div id="user-avatar" style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#06b6d4,#3b82f6);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;cursor:pointer;" title="Sign out" onclick="signOut()">?</div>
+    </div>
+  </nav>
+
+  <div style="display:flex;">
+    <!-- Sidebar -->
+    <aside style="width:220px;border-right:1px solid #1f2937;min-height:calc(100vh - 56px);padding:16px;flex-shrink:0;">
+      <a class="sidebar-link active" id="nav-dashboard" onclick="showView('dashboard')">â¡ Dashboard</a>
+      <a class="sidebar-link" id="nav-history" onclick="showView('history')">ð Interview History</a>
+      <a class="sidebar-link" id="nav-upgrades" onclick="showView('upgrades')">ð Pro Upgrade</a>
+      <div style="border-top:1px solid #1f2937;margin-top:16px;padding-top:16px;">
+        <div style="font-size:12px;color:#4b5563;padding:0 12px;">
+          <div id="sidebar-email" style="margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
+          <div id="sidebar-since" style="color:#374151;"></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main style="flex:1;padding:28px;min-width:0;">
+
+      <!-- DASHBOARD VIEW -->
+      <div id="view-dashboard" style="display:block;">
+        <div style="margin-bottom:24px;">
+          <h1 style="font-size:24px;font-weight:700;margin:0 0 4px;" id="welcome-msg">Welcome back ð</h1>
+          <p style="color:#6b7280;font-size:14px;margin:0;" id="interview-count-msg">Loading your interviews...</p>
+        </div>
+
+        <!-- Stats -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;" id="stats-row">
+          <div class="card" style="padding:20px;">
+            <div style="font-size:12px;color:#6b7280;margin-bottom:8px;">Latest Score</div>
+            <div class="gradient-text" style="font-size:32px;font-weight:800;" id="stat-latest">â</div>
+            <div style="font-size:12px;color:#4b5563;margin-top:4px;" id="stat-latest-label">No interviews yet</div>
+          </div>
+          <div class="card" style="padding:20px;">
+            <div style="font-size:12px;color:#6b7280;margin-bottom:8px;">Total Interviews</div>
+            <div style="font-size:32px;font-weight:800;color:#818cf8;" id="stat-total">0</div>
+            <div style="font-size:12px;color:#4b5563;margin-top:4px;">All time</div>
+          </div>
+          <div class="card" style="padding:20px;">
+            <div style="font-size:12px;color:#6b7280;margin-bottom:8px;">Average Score</div>
+            <div style="font-size:32px;font-weight:800;color:#a78bfa;" id="stat-avg">â</div>
+            <div style="font-size:12px;color:#4b5563;margin-top:4px;">Across all sessions</div>
+          </div>
+        </div>
+
+        <!-- Latest Report + Improvements -->
+        <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:16px;" id="dashboard-main">
+          <!-- Latest Score Card -->
+          <div class="card" style="padding:24px;" id="latest-score-card">
+            <div id="no-interviews-state" style="text-align:center;padding:40px 20px;">
+              <div style="font-size:48px;margin-bottom:16px;">ðï¸</div>
+              <h2 style="font-size:18px;font-weight:700;margin:0 0 8px;">No interviews yet</h2>
+              <p style="color:#6b7280;font-size:14px;margin:0 0 20px;">Your interview reports will appear here after your first session.</p>
+              <a href="https://kestechgroup.com/interviewiq" class="btn-primary" style="text-decoration:none;display:inline-block;font-size:14px;">Book an Interview â</a>
+            </div>
+            <div id="latest-score-content" style="display:none;">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
+                <div>
+                  <h2 style="font-size:17px;font-weight:700;margin:0 0 4px;">Your Latest Report</h2>
+                  <p style="color:#6b7280;font-size:13px;margin:0;" id="latest-job-label">â</p>
+                </div>
+                <div style="text-align:right;">
+                  <div style="font-size:42px;font-weight:800;" id="latest-score-num"><span class="gradient-text">â</span></div>
+                  <div style="font-size:13px;font-weight:600;" id="latest-status-label">â</div>
+                </div>
+              </div>
+              <div id="latest-bars"></div>
+              <button onclick="showView('history')" style="background:none;border:none;color:#06b6d4;font-size:13px;cursor:pointer;margin-top:8px;padding:0;">View full history â</button>
+            </div>
+          </div>
+
+          <!-- Improvements Card -->
+          <div class="card" style="padding:24px;">
+            <h2 style="font-size:16px;font-weight:700;margin:0 0 16px;">ð¯ Areas to Improve</h2>
+            <div id="improvements-list">
+              <div style="color:#6b7280;font-size:14px;">Complete your first interview to see personalized improvement tips.</div>
+            </div>
+            <div id="pro-cta-dash" style="display:none;background:#0f1117;border:1px solid #374151;border-radius:10px;padding:14px;margin-top:16px;">
+              <p style="font-size:13px;color:#9ca3af;margin:0 0 10px;">ð Get a full coaching plan, resume review & career path â all included.</p>
+              <button class="btn-primary" style="width:100%;font-size:13px;" onclick="showView('upgrades')">Unlock Pro â $69 one-time</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HISTORY VIEW -->
+      <div id="view-history" style="display:none;">
+        <h1 style="font-size:24px;font-weight:700;margin:0 0 24px;">Interview History</h1>
+        <div id="history-list">
+          <div style="color:#6b7280;font-size:14px;text-align:center;padding:60px 0;">
+            <div style="font-size:40px;margin-bottom:12px;">ð­</div>
+            No interviews on record yet.
+          </div>
+        </div>
+      </div>
+
+      <!-- DETAIL VIEW -->
+      <div id="view-detail" style="display:none;">
+        <button onclick="showView('history')" style="background:none;border:none;color:#6b7280;font-size:14px;cursor:pointer;margin-bottom:20px;padding:0;display:flex;align-items:center;gap:6px;">â Back to History</button>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;">
+          <div>
+            <h1 style="font-size:22px;font-weight:700;margin:0 0 4px;" id="detail-title">â</h1>
+            <p style="color:#6b7280;font-size:14px;margin:0;" id="detail-subtitle">â</p>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:48px;font-weight:800;"><span class="gradient-text" id="detail-score">â</span><span style="font-size:24px;color:#4b5563;">/100</span></div>
+            <div style="font-size:14px;font-weight:600;" id="detail-status">â</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:20px;">
+          <button class="tab-btn active" id="tab-scores" onclick="switchTab('scores')">Scores</button>
+          <button class="tab-btn" id="tab-improvements" onclick="switchTab('improvements')">Improvements</button>
+          <button class="tab-btn" id="tab-transcript" onclick="switchTab('transcript')">Transcript</button>
+        </div>
+        <div class="card" style="padding:24px;">
+          <div id="tab-content-scores"></div>
+          <div id="tab-content-improvements" style="display:none;"></div>
+          <div id="tab-content-transcript" style="display:none;"></div>
+        </div>
+      </div>
+
+      <!-- UPGRADES VIEW -->
+      <div id="view-upgrades" style="display:none;">
+        <h1 style="font-size:24px;font-weight:700;margin:0 0 6px;">Pro Upgrade</h1>
+        <p style="color:#6b7280;font-size:14px;margin:0 0 28px;">One payment. Every feature. Yours forever.</p>
+
+        <div id="already-pro" style="display:none;text-align:center;padding:60px 20px;" class="card">
+          <div style="font-size:48px;margin-bottom:16px;">â¦</div>
+          <h2 style="font-size:22px;font-weight:700;margin:0 0 8px;color:#a855f7;">You're a Pro member</h2>
+          <p style="color:#9ca3af;font-size:15px;">All features are unlocked. Enjoy your full coaching suite.</p>
+        </div>
+
+        <div id="upgrade-offer" style="display:grid;grid-template-columns:1.2fr 1fr;gap:20px;">
+          <div style="background:linear-gradient(135deg,#0f1f35,#0f1117);border:1px solid #06b6d4;border-radius:16px;padding:28px;">
+            <span style="font-size:11px;background:rgba(6,182,212,0.15);color:#06b6d4;padding:3px 10px;border-radius:999px;font-weight:700;">ONE-TIME PAYMENT</span>
+            <div style="font-size:52px;font-weight:800;margin:12px 0 4px;">$69</div>
+            <p style="color:#9ca3af;font-size:14px;margin:0 0 24px;">Unlock all Pro features â no recurring fees, no limits.</p>
+
+            <div style="display:flex;flex-direction:column;gap:16px;margin-bottom:28px;">
+              <div style="display:flex;gap:12px;">
+                <span style="font-size:22px;">ð</span>
+                <div><div style="font-weight:600;font-size:14px;">AI Coaching Plan</div><div style="color:#6b7280;font-size:13px;margin-top:2px;">Personalized drills targeting your weakest interview areas.</div></div>
+              </div>
+              <div style="display:flex;gap:12px;">
+                <span style="font-size:22px;">ð</span>
+                <div><div style="font-weight:600;font-size:14px;">Resume Improvement</div><div style="color:#6b7280;font-size:13px;margin-top:2px;">ATS-optimized rewrite aligned to your target roles.</div></div>
+              </div>
+              <div style="display:flex;gap:12px;">
+                <span style="font-size:22px;">ðºï¸</span>
+                <div><div style="font-weight:600;font-size:14px;">Career Path Advisor</div><div style="color:#6b7280;font-size:13px;margin-top:2px;">Roadmap of roles, certs, and milestones to your 2-year goal.</div></div>
+              </div>
+              <div style="display:flex;gap:12px;">
+                <span style="font-size:22px;">ð</span>
+                <div><div style="font-weight:600;font-size:14px;">Annotated Transcripts</div><div style="color:#6b7280;font-size:13px;margin-top:2px;">AI-annotated transcripts with moment-by-moment feedback.</div></div>
+              </div>
+              <div style="display:flex;gap:12px;">
+                <span style="font-size:22px;">â¨</span>
+                <div><div style="font-weight:600;font-size:14px;">All Future Features</div><div style="color:#6b7280;font-size:13px;margin-top:2px;">Every new Pro feature included automatically.</div></div>
+              </div>
+            </div>
+
+            <button class="btn-primary" style="width:100%;padding:14px;font-size:16px;" onclick="startProUpgrade()">Unlock Pro â $69 â</button>
+            <p style="text-align:center;color:#4b5563;font-size:12px;margin-top:10px;">One-time payment Â· Secure checkout via Stripe</p>
+          </div>
+
+          <div class="card" style="padding:24px;">
+            <h3 style="font-size:16px;font-weight:700;margin:0 0 6px;">Without Pro</h3>
+            <p style="color:#6b7280;font-size:13px;margin:0 0 20px;">Here's what's currently locked:</p>
+            <div style="display:flex;flex-direction:column;gap:16px;">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:36px;height:36px;background:#1f2937;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#4b5563;">ð</div>
+                <div><div style="font-size:14px;font-weight:600;color:#d1d5db;">AI Coaching Plan</div><div style="font-size:12px;color:#4b5563;">Based on your interview sessions</div></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:36px;height:36px;background:#1f2937;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#4b5563;">ð</div>
+                <div><div style="font-size:14px;font-weight:600;color:#d1d5db;">Resume Review</div><div style="font-size:12px;color:#4b5563;">Aligned to your target titles</div></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:36px;height:36px;background:#1f2937;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#4b5563;">ð</div>
+                <div><div style="font-size:14px;font-weight:600;color:#d1d5db;">Career Path Map</div><div style="font-size:12px;color:#4b5563;">Your next 3 role milestones</div></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:36px;height:36px;background:#1f2937;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#4b5563;">ð</div>
+                <div><div style="font-size:14px;font-weight:600;color:#d1d5db;">Transcript Analysis</div><div style="font-size:12px;color:#4b5563;">Full AI-annotated review</div></div>
+              </div>
+            </div>
+            <div style="border-top:1px solid #1f2937;margin-top:20px;padding-top:16px;">
+              <p style="font-size:12px;color:#4b5563;text-align:center;">Most members unlock within their first 3 interviews</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script>
+// âââ CONFIG âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+const SUPABASE_URL = 'https://vadpkpvbtybsfsygarup.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZhZHBrcHZidHlic2ZzeWdhcnVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NjAxMTYsImV4cCI6MjA5MjAzNjExNn0.7N5wP9z1HvzqajVq6iJre3pMvHiubi0YXkUK-ik9VTA';
+// Replace with your Stripe Pro Upgrade payment link once created
+const STRIPE_PRO_LINK = 'https://buy.stripe.com/test_3cIbJ3dzTe6Hcug4D5aAw02';
+
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let currentUser = null;
+let userData = null;
+let interviews = [];
+let currentInterview = null;
+let currentTab = 'scores';
+
+// âââ INIT âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+async function init() {
+  // Handle magic link callback
+  const { data: { session }, error } = await supabase.auth.getSession();
+
+  if (session) {
+    currentUser = session.user;
+    await loadPortal();
+  } else {
+    showLogin();
+  }
+
+  // Listen for auth changes (magic link click)
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session) {
+      currentUser = session.user;
+      await loadPortal();
+    } else if (event === 'SIGNED_OUT') {
+      showLogin();
+    }
+  });
+}
+
+// âââ AUTH âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+async function sendMagicLink() {
+  const email = document.getElementById('login-email').value.trim();
+  const btn = document.getElementById('login-btn');
+  const errEl = document.getElementById('login-error');
+
+  if (!email || !email.includes('@')) {
+    showError('Please enter a valid email address.');
+    return;
+  }
+
+  btn.textContent = 'Sending...';
+  btn.disabled = true;
+  errEl.style.display = 'none';
+
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: 'https://portal.kestechgroup.com/' }
+  });
+
+  if (error) {
+    showError(error.message);
+    btn.textContent = 'Send Magic Link';
+    btn.disabled = false;
+  } else {
+    document.getElementById('sent-email').textContent = email;
+    document.getElementById('login-form-wrap').style.display = 'none';
+    document.getElementById('login-success').style.display = 'block';
+  }
+}
+
+function showError(msg) {
+  const el = document.getElementById('login-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+async function signOut() {
+  await supabase.auth.signOut();
+}
+
+// âââ PORTAL LOAD ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+async function loadPortal() {
+  show('portal');
+
+  // Load user profile
+  const { data: user } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', currentUser.id)
+    .single();
+
+  userData = user;
+
+  // Update nav
+  const initials = (currentUser.email || '?')[0].toUpperCase();
+  document.getElementById('user-avatar').textContent = initials;
+  document.getElementById('sidebar-email').textContent = currentUser.email;
+
+  if (userData) {
+    document.getElementById('sidebar-since').textContent = 'Member since ' + formatDate(userData.created_at);
+    const plan = (userData.plan_type || 'single');
+    document.getElementById('nav-plan-badge').textContent = plan === 'monthly' ? 'Monthly' : 'Single';
+    if (userData.pro_upgrade) {
+      document.getElementById('nav-pro-badge').style.display = 'inline';
+    }
+  }
+
+  // Load interviews
+  const { data: ivs } = await supabase
+    .from('interviews')
+    .select('*, interview_scores(*), improvement_notes(*)')
+    .eq('user_id', currentUser.id)
+    .order('interview_date', { ascending: false });
+
+  interviews = ivs || [];
+  renderDashboard();
+  renderHistory();
+}
+
+// âââ DASHBOARD ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+function renderDashboard() {
+  const count = interviews.length;
+  const firstName = currentUser.email.split('@')[0];
+  document.getElementById('welcome-msg').textContent = `Welcome back, ${firstName} ð`;
+  document.getElementById('interview-count-msg').textContent =
+    count === 0 ? "You haven't completed any interviews yet." :
+    `You've completed ${count} interview${count > 1 ? 's' : ''}. Here's your latest session.`;
+
+  document.getElementById('stat-total').textContent = count;
+
+  if (count > 0) {
+    const latest = interviews[0];
+    const avg = Math.round(interviews.reduce((a, b) => a + (b.overall_score || 0), 0) / count);
+
+    document.getElementById('stat-latest').textContent = `${latest.overall_score || 'â'}/100`;
+    document.getElementById('stat-latest-label').textContent = latest.status_label || '';
+    document.getElementById('stat-avg').textContent = `${avg}/100`;
+
+    document.getElementById('no-interviews-state').style.display = 'none';
+    document.getElementById('latest-score-content').style.display = 'block';
+
+    document.getElementById('latest-job-label').textContent = `${latest.job_title || 'â'} Â· ${latest.company_name || 'â'}`;
+    document.getElementById('latest-score-num').innerHTML = `<span class="gradient-text">${latest.overall_score || 'â'}</span>`;
+    document.getElementById('latest-status-label').textContent = latest.status_label || '';
+    document.getElementById('latest-status-label').className = 'status-' + statusClass(latest.status_label);
+
+    // Score bars
+    const bars = document.getElementById('latest-bars');
+    bars.innerHTML = (latest.interview_scores || []).map(s => scoreBar(s.category, s.score)).join('');
+
+    // Improvements
+    const notes = latest.improvement_notes || [];
+    document.getElementById('improvements-list').innerHTML = notes.length > 0
+      ? notes.map(n => `<div style="border-left:3px solid #06b6d4;padding-left:12px;margin-bottom:16px;"><p style="color:#d1d5db;font-size:14px;margin:0;">${n.note}</p></div>`).join('')
+      : '<div style="color:#6b7280;font-size:14px;">Improvement tips will appear here after your interview is analyzed.</div>';
+
+    // Pro CTA
+    if (!userData?.pro_upgrade) {
+      document.getElementById('pro-cta-dash').style.display = 'block';
+    }
+  }
+}
+
+function renderHistory() {
+  const list = document.getElementById('history-list');
+  if (interviews.length === 0) return;
+
+  list.innerHTML = interviews.map(iv => `
+    <div class="card interview-row" style="padding:20px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;transition:border-color 0.15s;"
+         onclick="openDetail('${iv.id}')">
+      <div style="display:flex;align-items:center;gap:20px;">
+        <div style="text-align:center;min-width:60px;">
+          <div class="gradient-text" style="font-size:30px;font-weight:800;">${iv.overall_score || 'â'}</div>
+          <div style="color:#4b5563;font-size:11px;">/100</div>
+        </div>
+        <div>
+          <div style="font-weight:600;font-size:15px;">${iv.job_title || 'Interview'}</div>
+          <div style="color:#6b7280;font-size:13px;">${iv.company_name || ''}</div>
+          <div style="color:#4b5563;font-size:12px;margin-top:2px;">${formatDate(iv.interview_date)}</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span style="font-size:13px;font-weight:600;" class="status-${statusClass(iv.status_label)}">${iv.status_label || ''}</span>
+        <span style="color:#4b5563;">â</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+// âââ DETAIL âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+function openDetail(id) {
+  currentInterview = interviews.find(iv => iv.id === id);
+  if (!currentInterview) return;
+
+  document.getElementById('detail-title').textContent = currentInterview.job_title || 'Interview';
+  document.getElementById('detail-subtitle').textContent = `${currentInterview.company_name || ''} Â· ${formatDate(currentInterview.interview_date)}`;
+  document.getElementById('detail-score').textContent = currentInterview.overall_score || 'â';
+  document.getElementById('detail-status').textContent = currentInterview.status_label || '';
+  document.getElementById('detail-status').className = 'status-' + statusClass(currentInterview.status_label);
+
+  // Scores tab
+  const scores = currentInterview.interview_scores || [];
+  document.getElementById('tab-content-scores').innerHTML = scores.length > 0
+    ? scores.map(s => scoreBar(s.category, s.score)).join('')
+    : '<div style="color:#6b7280;">Score breakdown not available yet.</div>';
+
+  // Improvements tab
+  const notes = currentInterview.improvement_notes || [];
+  document.getElementById('tab-content-improvements').innerHTML = notes.length > 0
+    ? notes.map(n => `<div style="border-left:3px solid #06b6d4;padding-left:16px;margin-bottom:20px;"><p style="color:#e5e7eb;font-size:14px;margin:0;">${n.note}</p></div>`).join('')
+    : '<div style="color:#6b7280;">Improvement notes not available yet.</div>';
+
+  // Transcript tab
+  const hasPro = userData?.pro_upgrade;
+  document.getElementById('tab-content-transcript').innerHTML = hasPro
+    ? renderTranscript(currentInterview)
+    : `<div style="text-align:center;padding:40px 0;">
+        <div style="font-size:40px;margin-bottom:12px;">ð</div>
+        <p style="color:#9ca3af;margin:0 0 16px;">Unlock the Pro upgrade to view AI-annotated transcripts.</p>
+        <button class="btn-primary" onclick="showView('upgrades')">Unlock Pro â $69 one-time</button>
+      </div>`;
+
+  switchTab('scores');
+  showView('detail');
+}
+
+function renderTranscript(iv) {
+  if (!iv.transcript) return '<div style="color:#6b7280;">Transcript not available for this session.</div>';
+  // Transcript is stored as JSONB â array of {role, content} turns
+  try {
+    const turns = typeof iv.transcript === 'string' ? JSON.parse(iv.transcript) : iv.transcript;
+    if (!Array.isArray(turns)) return `<pre style="color:#d1d5db;font-size:13px;white-space:pre-wrap;">${iv.raw_text || 'No transcript available.'}</pre>`;
+    return turns.map(t => `
+      <div style="margin-bottom:16px;">
+        <div style="font-size:11px;font-weight:700;color:${t.role==='agent'?'#06b6d4':'#9ca3af'};margin-bottom:4px;text-transform:uppercase;">${t.role === 'agent' ? 'ð¤ AI Interviewer' : 'ð¤ You'}</div>
+        <div style="background:${t.role==='agent'?'#1f2937':'#161b27'};border-radius:8px;padding:12px 16px;font-size:14px;color:#e5e7eb;line-height:1.6;">${t.content}</div>
+      </div>
+    `).join('');
+  } catch(e) {
+    return `<pre style="color:#d1d5db;font-size:13px;white-space:pre-wrap;">${iv.raw_text || 'No transcript available.'}</pre>`;
+  }
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  ['scores','improvements','transcript'].forEach(t => {
+    document.getElementById(`tab-${t}`).className = 'tab-btn' + (t === tab ? ' active' : '');
+    document.getElementById(`tab-content-${t}`).style.display = t === tab ? 'block' : 'none';
+  });
+}
+
+// âââ UPGRADES âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+function startProUpgrade() {
+  // Append user email to Stripe link for pre-fill
+  const email = currentUser?.email || '';
+  const url = STRIPE_PRO_LINK + (email ? `?prefilled_email=${encodeURIComponent(email)}` : '');
+  window.open(url, '_blank');
+}
+
+// âââ NAVIGATION âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+function showView(view) {
+  ['dashboard','history','detail','upgrades'].forEach(v => {
+    document.getElementById(`view-${v}`).style.display = v === view ? 'block' : 'none';
+  });
+  ['dashboard','history','upgrades'].forEach(v => {
+    const el = document.getElementById(`nav-${v}`);
+    if (el) el.className = 'sidebar-link' + (v === view ? ' active' : '');
+  });
+
+  // Handle pro upgrade view
+  if (view === 'upgrades') {
+    const hasPro = userData?.pro_upgrade;
+    document.getElementById('already-pro').style.display = hasPro ? 'block' : 'none';
+    document.getElementById('upgrade-offer').style.display = hasPro ? 'none' : 'grid';
+  }
+}
+
+function showLogin() {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('login-page').style.display = 'flex';
+  document.getElementById('portal').style.display = 'none';
+}
+
+function show(el) {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('login-page').style.display = 'none';
+  document.getElementById('portal').style.display = 'block';
+}
+
+// âââ HELPERS ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+function scoreBar(label, score) {
+  return `
+    <div style="margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+        <span style="color:#d1d5db;font-size:13px;">${label}</span>
+        <span style="color:#06b6d4;font-size:13px;font-weight:600;">${score}/100</span>
+      </div>
+      <div style="background:#1f2937;border-radius:999px;height:8px;">
+        <div class="score-bar-fill" style="width:${score}%;"></div>
+      </div>
+    </div>`;
+}
+
+function statusClass(label) {
+  if (!label) return 'good';
+  const l = label.toLowerCase();
+  if (l.includes('top')) return 'top';
+  if (l.includes('strong')) return 'strong';
+  if (l.includes('good')) return 'good';
+  return 'needs';
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return 'â';
+  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+// Allow Enter key on login
+document.getElementById('login-email').addEventListener('keydown', e => {
+  if (e.key === 'Enter') sendMagicLink();
+});
+
+// Start
+init();
+</script>
+</body>
+</html>

@@ -119,6 +119,7 @@
       <a class="sidebar-link active" id="nav-dashboard" onclick="showView('dashboard')">⚡ Dashboard</a>
       <a class="sidebar-link" id="nav-call" onclick="showView('call')" style="color:#06b6d4;">📞 Call Now</a>
       <a class="sidebar-link" id="nav-history" onclick="showView('history')">📋 Interview History</a>
+      <a class="sidebar-link" id="nav-jobs" onclick="showView('jobs')">💼 Job Board</a>
       <a class="sidebar-link" id="nav-upgrades" onclick="showView('upgrades')">🚀 Pro Upgrade</a>
       <div style="border-top:1px solid #1f2937;margin-top:16px;padding-top:16px;">
         <div style="font-size:12px;color:#4b5563;padding:0 12px;">
@@ -184,7 +185,7 @@
                 <button class="call-now-btn" onclick="openCallModal()" style="font-size:14px;padding:10px 20px;">
                   <span class="pulse-dot"></span>Call Now
                 </button>
-                <a href="https://kestechgroup.com/interviewiq" class="btn-primary" style="text-decoration:none;display:inline-flex;align-items:center;font-size:14px;padding:10px 20px;background:#1f2937;background-image:none;border:1px solid #374151;">Schedule →</a>
+                <a href="https://kestechgroup.com/interviewiq" onclick="track('schedule_interview_clicked')" class="btn-primary" style="text-decoration:none;display:inline-flex;align-items:center;font-size:14px;padding:10px 20px;background:#1f2937;background-image:none;border:1px solid #374151;">Schedule →</a>
               </div>
             </div>
             <div id="latest-score-content" style="display:none;">
@@ -337,6 +338,17 @@
               <p style="font-size:12px;color:#4b5563;text-align:center;">Most members unlock within their first 3 interviews</p>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- JOB BOARD VIEW -->
+      <div id="view-jobs" style="display:none;">
+        <div style="margin-bottom:24px;">
+          <h1 style="font-size:24px;font-weight:700;margin:0 0 4px;">💼 Job Board</h1>
+          <p style="color:#6b7280;font-size:14px;margin:0;">Open positions from KES Tech Group. Prep with InterviewIQ, then apply directly.</p>
+        </div>
+        <div id="jobs-list">
+          <!-- Jobs are rendered by renderJobs() -->
         </div>
       </div>
 
@@ -517,6 +529,33 @@ async function signOut() {
   await sbClient.auth.signOut();
 }
 
+// ─── ANALYTICS ────────────────────────────────────────────────────────────────
+async function track(eventName, properties = {}) {
+  if (!currentUser) return;
+  await sbClient.from('platform_events').insert({
+    user_id:    currentUser.id,
+    event_name: eventName,
+    properties: { ...properties, plan: userData?.plan_type || 'unknown' }
+  });
+}
+
+async function trackJobApplication(jobUrl, jobTitle, company, jobId) {
+  if (!currentUser) return;
+  await Promise.all([
+    sbClient.from('job_applications').insert({
+      user_id:         currentUser.id,
+      job_id:          jobId || null,
+      job_title:       jobTitle || null,
+      company_name:    company || null,
+      job_url:         jobUrl,
+      applicant_email: currentUser.email,
+      source:          'interviewiq_portal',
+      status:          'clicked'
+    }),
+    track('job_applied', { job_url: jobUrl, job_title: jobTitle, company })
+  ]);
+}
+
 // ─── PORTAL LOAD ──────────────────────────────────────────────────────────────
 async function loadPortal() {
   show('portal');
@@ -554,6 +593,7 @@ async function loadPortal() {
   interviews = ivs || [];
   renderDashboard();
   renderHistory();
+  track('portal_login', { interview_count: (ivs || []).length });
 }
 
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
@@ -703,6 +743,51 @@ function startProUpgrade() {
   window.open(url, '_blank');
 }
 
+// ─── JOB BOARD ────────────────────────────────────────────────────────────────
+// Static job list for now — replace with a Supabase `jobs` table fetch when ready.
+const KES_JOBS = [
+  {
+    id:       '506171',
+    title:    'Manager, Aircraft Line Maintenance',
+    company:  'KES Tech Group',
+    location: 'Illinois Medical District, IL',
+    type:     'Full-time',
+    url:      'https://jobs.kestechgroup.com/jobs/manager-aircraft-line-maintenance-hub-illinois-medical-district-il-506171'
+  }
+];
+
+function renderJobs() {
+  const list = document.getElementById('jobs-list');
+  if (!KES_JOBS.length) {
+    list.innerHTML = '<div style="color:#6b7280;text-align:center;padding:60px 0;">No open positions right now. Check back soon.</div>';
+    return;
+  }
+  list.innerHTML = KES_JOBS.map(job => `
+    <div class="card" style="padding:20px 24px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;">
+      <div>
+        <div style="font-weight:700;font-size:16px;margin-bottom:4px;">${job.title}</div>
+        <div style="color:#6b7280;font-size:13px;">${job.company} &middot; ${job.location}</div>
+        <div style="margin-top:6px;">
+          <span style="background:#1f2937;color:#9ca3af;font-size:11px;font-weight:600;padding:3px 10px;border-radius:999px;">${job.type}</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;flex-shrink:0;">
+        <button onclick="openCallModal()" class="tab-btn" style="background:#1f2937;color:#06b6d4;border:1px solid rgba(6,182,212,0.3);font-size:13px;">
+          📞 Prep Call
+        </button>
+        <a href="${job.url}"
+           target="_blank"
+           rel="noopener"
+           onclick="trackJobApplication('${job.url}','${job.title}','${job.company}','${job.id}')"
+           class="btn-primary"
+           style="text-decoration:none;display:inline-flex;align-items:center;font-size:13px;padding:8px 16px;">
+          Apply Now →
+        </a>
+      </div>
+    </div>
+  `).join('');
+}
+
 // ─── CALL NOW ─────────────────────────────────────────────────────────────────
 function openCallModal() {
   document.getElementById('modal-call-form').style.display = 'block';
@@ -777,18 +862,20 @@ async function submitCallRequest(source) {
 
   phoneDisplay.textContent = phone;
   formEl.style.display = 'none';
-  successEl.style.display = isModal ? 'block' : 'block';
+  successEl.style.display = 'block';
+  track('call_requested', { job_title: jobEl.value.trim() || null, company: companyEl.value.trim() || null });
 }
 
 // ─── NAVIGATION ───────────────────────────────────────────────────────────────
 function showView(view) {
-  ['dashboard','history','detail','upgrades','call'].forEach(v => {
+  ['dashboard','history','detail','upgrades','call','jobs'].forEach(v => {
     document.getElementById(`view-${v}`).style.display = v === view ? 'block' : 'none';
   });
-  ['dashboard','history','upgrades','call'].forEach(v => {
+  ['dashboard','history','upgrades','call','jobs'].forEach(v => {
     const el = document.getElementById(`nav-${v}`);
     if (el) el.className = 'sidebar-link' + (v === view ? ' active' : '');
   });
+  if (view === 'jobs') renderJobs();
 
   // Handle pro upgrade view — gating:
   //   • Pro already owned → show "You're a Pro member"

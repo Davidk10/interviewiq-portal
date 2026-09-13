@@ -34,6 +34,17 @@
     .status-good { color: #f59e0b; }
     .status-needs { color: #ef4444; }
     .pro-banner { background: linear-gradient(135deg, #0f1f35, #150a2e); border: 1px solid rgba(168,85,247,0.3); border-radius: 12px; }
+    .call-now-btn { background: linear-gradient(90deg, #06b6d4, #3b82f6); color: white; border: none; cursor: pointer; font-weight: 700; border-radius: 10px; padding: 12px 22px; font-size: 15px; display: inline-flex; align-items: center; gap: 10px; transition: all 0.2s; }
+    .call-now-btn:hover { opacity: 0.92; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(6,182,212,0.35); }
+    .pulse-dot { width: 9px; height: 9px; background: #4ade80; border-radius: 50%; flex-shrink: 0; animation: pulseDot 1.6s ease-in-out infinite; }
+    @keyframes pulseDot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.5); } }
+    .call-banner { background: linear-gradient(135deg, #061820, #091830); border: 1px solid rgba(6,182,212,0.3); border-radius: 14px; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
+    .modal-overlay.open { display: flex; }
+    .modal-box { background: #161b27; border: 1px solid #1f2937; border-radius: 16px; padding: 32px; width: 100%; max-width: 440px; }
+    input[type="tel"], input[type="text"] { background: #1f2937; border: 1px solid #374151; color: white; border-radius: 8px; padding: 12px 16px; width: 100%; font-size: 15px; outline: none; }
+    input[type="tel"]:focus, input[type="text"]:focus { border-color: #06b6d4; }
+    input[type="tel"]::placeholder, input[type="text"]::placeholder { color: #6b7280; }
   </style>
 </head>
 <body>
@@ -106,7 +117,9 @@
     <!-- Sidebar -->
     <aside style="width:220px;border-right:1px solid #1f2937;min-height:calc(100vh - 56px);padding:16px;flex-shrink:0;">
       <a class="sidebar-link active" id="nav-dashboard" onclick="showView('dashboard')">⚡ Dashboard</a>
+      <a class="sidebar-link" id="nav-call" onclick="showView('call')" style="color:#06b6d4;">📞 Call Now</a>
       <a class="sidebar-link" id="nav-history" onclick="showView('history')">📋 Interview History</a>
+      <a class="sidebar-link" id="nav-jobs" onclick="showView('jobs')">💼 Job Board</a>
       <a class="sidebar-link" id="nav-upgrades" onclick="showView('upgrades')">🚀 Pro Upgrade</a>
       <div style="border-top:1px solid #1f2937;margin-top:16px;padding-top:16px;">
         <div style="font-size:12px;color:#4b5563;padding:0 12px;">
@@ -127,6 +140,18 @@
         <div style="margin-bottom:24px;">
           <h1 style="font-size:24px;font-weight:700;margin:0 0 4px;" id="welcome-msg">Welcome back 👋</h1>
           <p style="color:#6b7280;font-size:14px;margin:0;" id="interview-count-msg">Loading your interviews...</p>
+        </div>
+
+        <!-- Call Now Banner -->
+        <div class="call-banner" style="padding:20px 24px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+          <div>
+            <div style="font-size:16px;font-weight:700;margin-bottom:4px;">Ready for your next interview?</div>
+            <div style="color:#6b7280;font-size:13px;">Start a live AI interview call instantly — no scheduling needed.</div>
+          </div>
+          <button class="call-now-btn" onclick="openCallModal()">
+            <span class="pulse-dot"></span>
+            Call Now
+          </button>
         </div>
 
         <!-- Stats -->
@@ -155,8 +180,13 @@
             <div id="no-interviews-state" style="text-align:center;padding:40px 20px;">
               <div style="font-size:48px;margin-bottom:16px;">🎙️</div>
               <h2 style="font-size:18px;font-weight:700;margin:0 0 8px;">No interviews yet</h2>
-              <p style="color:#6b7280;font-size:14px;margin:0 0 20px;">Your interview reports will appear here after your first session.</p>
-              <a href="https://kestechgroup.com/interviewiq" class="btn-primary" style="text-decoration:none;display:inline-block;font-size:14px;">Book an Interview →</a>
+              <p style="color:#6b7280;font-size:14px;margin:0 0 24px;">Your interview reports will appear here after your first session.</p>
+              <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+                <button class="call-now-btn" onclick="openCallModal()" style="font-size:14px;padding:10px 20px;">
+                  <span class="pulse-dot"></span>Call Now
+                </button>
+                <a href="https://kestechgroup.com/interviewiq" onclick="track('schedule_interview_clicked')" class="btn-primary" style="text-decoration:none;display:inline-flex;align-items:center;font-size:14px;padding:10px 20px;background:#1f2937;background-image:none;border:1px solid #374151;">Schedule →</a>
+              </div>
             </div>
             <div id="latest-score-content" style="display:none;">
               <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
@@ -311,7 +341,108 @@
         </div>
       </div>
 
+      <!-- JOB BOARD VIEW -->
+      <div id="view-jobs" style="display:none;">
+        <div style="margin-bottom:24px;">
+          <h1 style="font-size:24px;font-weight:700;margin:0 0 4px;">💼 Job Board</h1>
+          <p style="color:#6b7280;font-size:14px;margin:0;">Open positions from KES Tech Group. Prep with InterviewIQ, then apply directly.</p>
+        </div>
+        <div id="jobs-list">
+          <!-- Jobs are rendered by renderJobs() -->
+        </div>
+      </div>
+
+      <!-- CALL NOW VIEW -->
+      <div id="view-call" style="display:none;max-width:560px;">
+        <div style="margin-bottom:28px;">
+          <h1 style="font-size:24px;font-weight:700;margin:0 0 6px;">📞 Start an Interview Call</h1>
+          <p style="color:#6b7280;font-size:14px;margin:0;">Enter your phone number and we'll connect you with an AI interviewer in seconds.</p>
+        </div>
+
+        <div class="card" id="view-call-form-card" style="padding:28px;">
+          <div style="display:flex;align-items:center;gap:10px;background:rgba(6,182,212,0.08);border:1px solid rgba(6,182,212,0.2);border-radius:10px;padding:14px 16px;margin-bottom:24px;">
+            <span class="pulse-dot" style="flex-shrink:0;"></span>
+            <span style="font-size:13px;color:#06b6d4;font-weight:600;">AI interviewers available now — average wait under 30 seconds</span>
+          </div>
+
+          <div style="margin-bottom:18px;">
+            <label style="display:block;font-size:13px;color:#9ca3af;margin-bottom:6px;font-weight:500;">Your phone number <span style="color:#ef4444;">*</span></label>
+            <input type="tel" id="view-call-phone" placeholder="+1 (555) 000-0000" autocomplete="tel" />
+          </div>
+
+          <div style="margin-bottom:18px;">
+            <label style="display:block;font-size:13px;color:#9ca3af;margin-bottom:6px;font-weight:500;">Job title you're preparing for <span style="color:#4b5563;">(optional)</span></label>
+            <input type="text" id="view-call-job" placeholder="e.g. Software Engineer, Product Manager" />
+          </div>
+
+          <div style="margin-bottom:24px;">
+            <label style="display:block;font-size:13px;color:#9ca3af;margin-bottom:6px;font-weight:500;">Company <span style="color:#4b5563;">(optional)</span></label>
+            <input type="text" id="view-call-company" placeholder="e.g. Google, Amazon, startup" />
+          </div>
+
+          <p id="view-call-error" style="color:#ef4444;font-size:13px;margin:0 0 16px;display:none;"></p>
+
+          <button class="call-now-btn" id="view-call-submit" style="width:100%;justify-content:center;padding:14px;font-size:16px;" onclick="submitCallRequest('view')">
+            <span class="pulse-dot"></span>
+            Start My Interview Call
+          </button>
+          <p style="text-align:center;color:#4b5563;font-size:12px;margin-top:12px;">We'll call the number above within 60 seconds.</p>
+        </div>
+
+        <div id="view-call-success" style="display:none;text-align:center;padding:48px 24px;" class="card">
+          <div style="font-size:52px;margin-bottom:16px;">📱</div>
+          <h2 style="font-size:20px;font-weight:700;margin:0 0 10px;color:#4ade80;">Your call is on the way!</h2>
+          <p style="color:#9ca3af;font-size:15px;margin:0 0 6px;">We're connecting an AI interviewer to <strong id="view-call-success-phone" style="color:white;"></strong> now.</p>
+          <p style="color:#6b7280;font-size:13px;margin:0 0 24px;">Pick up within the next 60 seconds. Your report will appear in Interview History once the session ends.</p>
+          <button onclick="resetCallView()" style="background:#1f2937;border:1px solid #374151;color:#9ca3af;padding:10px 22px;border-radius:8px;cursor:pointer;font-size:14px;">Start another call</button>
+        </div>
+      </div>
+
     </main>
+  </div>
+
+  <!-- CALL NOW MODAL -->
+  <div class="modal-overlay" id="call-modal" onclick="handleModalClick(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
+        <div>
+          <h2 style="font-size:20px;font-weight:700;margin:0 0 4px;">📞 Start a Call</h2>
+          <p style="color:#6b7280;font-size:13px;margin:0;">We'll call you instantly — no wait, no scheduling.</p>
+        </div>
+        <button onclick="closeCallModal()" style="background:none;border:none;color:#6b7280;font-size:20px;cursor:pointer;line-height:1;padding:0 0 0 12px;">✕</button>
+      </div>
+
+      <div id="modal-call-form">
+        <div style="margin-bottom:16px;">
+          <label style="display:block;font-size:13px;color:#9ca3af;margin-bottom:6px;font-weight:500;">Your phone number <span style="color:#ef4444;">*</span></label>
+          <input type="tel" id="modal-call-phone" placeholder="+1 (555) 000-0000" autocomplete="tel" />
+        </div>
+        <div style="margin-bottom:16px;">
+          <label style="display:block;font-size:13px;color:#9ca3af;margin-bottom:6px;font-weight:500;">Job title <span style="color:#4b5563;">(optional)</span></label>
+          <input type="text" id="modal-call-job" placeholder="e.g. Software Engineer, Product Manager" />
+        </div>
+        <div style="margin-bottom:20px;">
+          <label style="display:block;font-size:13px;color:#9ca3af;margin-bottom:6px;font-weight:500;">Company <span style="color:#4b5563;">(optional)</span></label>
+          <input type="text" id="modal-call-company" placeholder="e.g. Google, Amazon, startup" />
+        </div>
+
+        <p id="modal-call-error" style="color:#ef4444;font-size:13px;margin:0 0 14px;display:none;"></p>
+
+        <button class="call-now-btn" id="modal-call-submit" style="width:100%;justify-content:center;padding:13px;font-size:15px;" onclick="submitCallRequest('modal')">
+          <span class="pulse-dot"></span>
+          Call Me Now
+        </button>
+        <p style="text-align:center;color:#4b5563;font-size:12px;margin-top:10px;">You'll receive the call within 60 seconds.</p>
+      </div>
+
+      <div id="modal-call-success" style="display:none;text-align:center;padding:16px 0 4px;">
+        <div style="font-size:44px;margin-bottom:14px;">📱</div>
+        <h3 style="font-size:18px;font-weight:700;margin:0 0 8px;color:#4ade80;">Call on the way!</h3>
+        <p style="color:#9ca3af;font-size:14px;margin:0 0 6px;">Connecting to <strong id="modal-call-success-phone" style="color:white;"></strong>…</p>
+        <p style="color:#6b7280;font-size:13px;margin:0 0 20px;">Pick up within 60 seconds. Your report will appear in Interview History.</p>
+        <button onclick="closeCallModal()" style="background:#1f2937;border:1px solid #374151;color:#9ca3af;padding:10px 22px;border-radius:8px;cursor:pointer;font-size:14px;">Close</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -398,6 +529,33 @@ async function signOut() {
   await sbClient.auth.signOut();
 }
 
+// ─── ANALYTICS ────────────────────────────────────────────────────────────────
+async function track(eventName, properties = {}) {
+  if (!currentUser) return;
+  await sbClient.from('platform_events').insert({
+    user_id:    currentUser.id,
+    event_name: eventName,
+    properties: { ...properties, plan: userData?.plan_type || 'unknown' }
+  });
+}
+
+async function trackJobApplication(jobUrl, jobTitle, company, jobId) {
+  if (!currentUser) return;
+  await Promise.all([
+    sbClient.from('job_applications').insert({
+      user_id:         currentUser.id,
+      job_id:          jobId || null,
+      job_title:       jobTitle || null,
+      company_name:    company || null,
+      job_url:         jobUrl,
+      applicant_email: currentUser.email,
+      source:          'interviewiq_portal',
+      status:          'clicked'
+    }),
+    track('job_applied', { job_url: jobUrl, job_title: jobTitle, company })
+  ]);
+}
+
 // ─── PORTAL LOAD ──────────────────────────────────────────────────────────────
 async function loadPortal() {
   show('portal');
@@ -435,6 +593,7 @@ async function loadPortal() {
   interviews = ivs || [];
   renderDashboard();
   renderHistory();
+  track('portal_login', { interview_count: (ivs || []).length });
 }
 
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
@@ -584,15 +743,139 @@ function startProUpgrade() {
   window.open(url, '_blank');
 }
 
+// ─── JOB BOARD ────────────────────────────────────────────────────────────────
+// Static job list for now — replace with a Supabase `jobs` table fetch when ready.
+const KES_JOBS = [
+  {
+    id:       '506171',
+    title:    'Manager, Aircraft Line Maintenance',
+    company:  'KES Tech Group',
+    location: 'Illinois Medical District, IL',
+    type:     'Full-time',
+    url:      'https://jobs.kestechgroup.com/jobs/manager-aircraft-line-maintenance-hub-illinois-medical-district-il-506171'
+  }
+];
+
+function renderJobs() {
+  const list = document.getElementById('jobs-list');
+  if (!KES_JOBS.length) {
+    list.innerHTML = '<div style="color:#6b7280;text-align:center;padding:60px 0;">No open positions right now. Check back soon.</div>';
+    return;
+  }
+  list.innerHTML = KES_JOBS.map(job => `
+    <div class="card" style="padding:20px 24px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;">
+      <div>
+        <div style="font-weight:700;font-size:16px;margin-bottom:4px;">${job.title}</div>
+        <div style="color:#6b7280;font-size:13px;">${job.company} &middot; ${job.location}</div>
+        <div style="margin-top:6px;">
+          <span style="background:#1f2937;color:#9ca3af;font-size:11px;font-weight:600;padding:3px 10px;border-radius:999px;">${job.type}</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;flex-shrink:0;">
+        <button onclick="openCallModal()" class="tab-btn" style="background:#1f2937;color:#06b6d4;border:1px solid rgba(6,182,212,0.3);font-size:13px;">
+          📞 Prep Call
+        </button>
+        <a href="${job.url}"
+           target="_blank"
+           rel="noopener"
+           onclick="trackJobApplication('${job.url}','${job.title}','${job.company}','${job.id}')"
+           class="btn-primary"
+           style="text-decoration:none;display:inline-flex;align-items:center;font-size:13px;padding:8px 16px;">
+          Apply Now →
+        </a>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ─── CALL NOW ─────────────────────────────────────────────────────────────────
+function openCallModal() {
+  document.getElementById('modal-call-form').style.display = 'block';
+  document.getElementById('modal-call-success').style.display = 'none';
+  document.getElementById('modal-call-error').style.display = 'none';
+  document.getElementById('modal-call-submit').textContent = '';
+  document.getElementById('modal-call-submit').innerHTML = '<span class="pulse-dot"></span> Call Me Now';
+  document.getElementById('modal-call-submit').disabled = false;
+  document.getElementById('call-modal').classList.add('open');
+  setTimeout(() => document.getElementById('modal-call-phone').focus(), 50);
+}
+
+function closeCallModal() {
+  document.getElementById('call-modal').classList.remove('open');
+}
+
+function handleModalClick(e) {
+  if (e.target === document.getElementById('call-modal')) closeCallModal();
+}
+
+function resetCallView() {
+  document.getElementById('view-call-form-card').style.display = 'block';
+  document.getElementById('view-call-success').style.display = 'none';
+  document.getElementById('view-call-error').style.display = 'none';
+  document.getElementById('view-call-phone').value = '';
+  document.getElementById('view-call-job').value = '';
+  document.getElementById('view-call-company').value = '';
+  const btn = document.getElementById('view-call-submit');
+  btn.innerHTML = '<span class="pulse-dot"></span> Start My Interview Call';
+  btn.disabled = false;
+}
+
+async function submitCallRequest(source) {
+  const isModal = source === 'modal';
+  const phoneEl   = document.getElementById(isModal ? 'modal-call-phone'   : 'view-call-phone');
+  const jobEl     = document.getElementById(isModal ? 'modal-call-job'     : 'view-call-job');
+  const companyEl = document.getElementById(isModal ? 'modal-call-company' : 'view-call-company');
+  const errorEl   = document.getElementById(isModal ? 'modal-call-error'   : 'view-call-error');
+  const submitBtn = document.getElementById(isModal ? 'modal-call-submit'  : 'view-call-submit');
+  const successEl = document.getElementById(isModal ? 'modal-call-success' : 'view-call-success');
+  const formEl    = isModal ? document.getElementById('modal-call-form') : document.getElementById('view-call-form-card');
+  const phoneDisplay = document.getElementById(isModal ? 'modal-call-success-phone' : 'view-call-success-phone');
+
+  const phone = phoneEl.value.trim();
+  if (!phone) {
+    errorEl.textContent = 'Please enter your phone number.';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  errorEl.style.display = 'none';
+  submitBtn.innerHTML = '<span class="pulse-dot"></span> Connecting…';
+  submitBtn.disabled = true;
+
+  const { error } = await sbClient
+    .from('call_requests')
+    .insert({
+      user_id:      currentUser.id,
+      phone_number: phone,
+      job_title:    jobEl.value.trim() || null,
+      company_name: companyEl.value.trim() || null,
+      status:       'pending'
+    });
+
+  if (error) {
+    errorEl.textContent = 'Something went wrong. Please try again or contact support.';
+    errorEl.style.display = 'block';
+    submitBtn.innerHTML = '<span class="pulse-dot"></span> ' + (isModal ? 'Call Me Now' : 'Start My Interview Call');
+    submitBtn.disabled = false;
+    return;
+  }
+
+  phoneDisplay.textContent = phone;
+  formEl.style.display = 'none';
+  successEl.style.display = 'block';
+  track('call_requested', { job_title: jobEl.value.trim() || null, company: companyEl.value.trim() || null });
+}
+
 // ─── NAVIGATION ───────────────────────────────────────────────────────────────
 function showView(view) {
-  ['dashboard','history','detail','upgrades'].forEach(v => {
+  ['dashboard','history','detail','upgrades','call','jobs'].forEach(v => {
     document.getElementById(`view-${v}`).style.display = v === view ? 'block' : 'none';
   });
-  ['dashboard','history','upgrades'].forEach(v => {
+  ['dashboard','history','upgrades','call','jobs'].forEach(v => {
     const el = document.getElementById(`nav-${v}`);
     if (el) el.className = 'sidebar-link' + (v === view ? ' active' : '');
   });
+  if (view === 'jobs') renderJobs();
 
   // Handle pro upgrade view — gating:
   //   • Pro already owned → show "You're a Pro member"
@@ -651,6 +934,11 @@ function formatDate(dateStr) {
 // Allow Enter key on login
 document.getElementById('login-email').addEventListener('keydown', e => {
   if (e.key === 'Enter') sendMagicLink();
+});
+
+// Close modal on Escape key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeCallModal();
 });
 
 // Start

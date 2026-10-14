@@ -581,7 +581,7 @@ async function loadPortal() {
   // Load interviews
   const { data: ivs } = await sbClient
     .from('interviews')
-    .select('*, interview_scores(*), improvement_notes(*)')
+    .select('*, interview_scores(*), improvement_notes(*), transcripts(transcript, raw_text)')
     .eq('user_id', currentUser.id)
     .order('interview_date', { ascending: false });
 
@@ -699,20 +699,25 @@ function openDetail(id) {
 }
 
 function renderTranscript(iv) {
-  if (!iv.transcript) return '<div style="color:#6b7280;">Transcript not available for this session.</div>';
-  // Transcript is stored as JSONB — array of {role, content} turns
-  try {
-    const turns = typeof iv.transcript === 'string' ? JSON.parse(iv.transcript) : iv.transcript;
-    if (!Array.isArray(turns)) return `<pre style="color:#d1d5db;font-size:13px;white-space:pre-wrap;">${iv.raw_text || 'No transcript available.'}</pre>`;
-    return turns.map(t => `
-      <div style="margin-bottom:16px;">
-        <div style="font-size:11px;font-weight:700;color:${t.role==='agent'?'#06b6d4':'#9ca3af'};margin-bottom:4px;text-transform:uppercase;">${t.role === 'agent' ? '🤖 AI Interviewer' : '👤 You'}</div>
-        <div style="background:${t.role==='agent'?'#1f2937':'#161b27'};border-radius:8px;padding:12px 16px;font-size:14px;color:#e5e7eb;line-height:1.6;">${t.content}</div>
-      </div>
-    `).join('');
-  } catch(e) {
-    return `<pre style="color:#d1d5db;font-size:13px;white-space:pre-wrap;">${iv.raw_text || 'No transcript available.'}</pre>`;
+  // Transcripts live in their own table: one row per interview holding the
+  // ElevenLabs conversation as a JSONB array of {role, message, ...} turns.
+  const t = (iv.transcripts || [])[0];
+  const empty = '<div style="color:#6b7280;">Transcript not available for this session.</div>';
+  if (!t) return empty;
+  const turns = Array.isArray(t.transcript) ? t.transcript.filter(x => (x.message || '').trim()) : [];
+  if (turns.length === 0) {
+    return t.raw_text ? `<pre style="color:#d1d5db;font-size:13px;white-space:pre-wrap;">${escapeHtml(t.raw_text)}</pre>` : empty;
   }
+  return turns.map(x => `
+    <div style="margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:700;color:${x.role==='agent'?'#06b6d4':'#9ca3af'};margin-bottom:4px;text-transform:uppercase;">${x.role === 'agent' ? '🤖 AI Interviewer' : '👤 You'}</div>
+      <div style="background:${x.role==='agent'?'#1f2937':'#161b27'};border-radius:8px;padding:12px 16px;font-size:14px;color:#e5e7eb;line-height:1.6;">${escapeHtml(x.message)}</div>
+    </div>
+  `).join('');
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
 function switchTab(tab) {

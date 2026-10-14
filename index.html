@@ -2,8 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>InterviewIQ Portal | KES</title>
+  <!-- iPhone / Home Screen app support -->
+  <meta name="theme-color" content="#0f1117" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="InterviewIQ" />
+  <meta name="format-detection" content="telephone=no" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+  <link rel="manifest" href="/manifest.webmanifest" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -22,7 +32,7 @@
     .tag-monthly { background: rgba(6,182,212,0.15); color: #06b6d4; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
     .tag-pro { background: rgba(168,85,247,0.15); color: #a855f7; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
     .interview-row:hover { border-color: rgba(6,182,212,0.4) !important; cursor: pointer; }
-    input[type="email"] { background: #1f2937; border: 1px solid #374151; color: white; border-radius: 8px; padding: 12px 16px; width: 100%; font-size: 15px; outline: none; }
+    input[type="email"] { background: #1f2937; border: 1px solid #374151; color: white; border-radius: 8px; padding: 12px 16px; width: 100%; font-size: 16px; outline: none; }
     input[type="email"]:focus { border-color: #06b6d4; }
     input[type="email"]::placeholder { color: #6b7280; }
     .tab-btn { padding: 8px 18px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; }
@@ -34,19 +44,74 @@
     .status-good { color: #f59e0b; }
     .status-needs { color: #ef4444; }
     .pro-banner { background: linear-gradient(135deg, #0f1f35, #150a2e); border: 1px solid rgba(168,85,247,0.3); border-radius: 12px; }
+    input.otp-input { background: #1f2937; border: 1px solid #374151; color: white; border-radius: 8px; padding: 12px 16px; width: 100%; font-size: 20px; letter-spacing: 6px; text-align: center; outline: none; }
+    input.otp-input:focus { border-color: #06b6d4; }
+
+    /* ─── LAYOUT ─────────────────────────────────────────────────────────── */
+    html { -webkit-text-size-adjust: 100%; }
+    body { -webkit-tap-highlight-color: transparent; overscroll-behavior-y: none; }
+    .full-height { min-height: 100vh; min-height: 100dvh; }
+    .top-nav { border-bottom:1px solid #1f2937; padding:0 24px; height:56px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; background:#0f1117; z-index:100; }
+    .app-sidebar { width:220px; border-right:1px solid #1f2937; min-height:calc(100vh - 56px); padding:16px; flex-shrink:0; }
+    .app-main { flex:1; padding:28px; min-width:0; }
+    .stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:24px; }
+    .dash-grid { display:grid; grid-template-columns:1.5fr 1fr; gap:16px; }
+    .upgrade-grid { grid-template-columns:1.2fr 1fr; gap:20px; }
+    .detail-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:24px; gap:16px; }
+    .tab-row { display:flex; gap:8px; margin-bottom:20px; }
+    .tab-bar { display:none; }
+    .mobile-only { display:none; }
+
+    /* ─── iPHONE / SMALL SCREENS ─────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .top-nav { height:calc(52px + env(safe-area-inset-top)); padding:env(safe-area-inset-top) calc(16px + env(safe-area-inset-right)) 0 calc(16px + env(safe-area-inset-left)); }
+      .app-sidebar { display:none; }
+      .app-main { padding:20px calc(16px + env(safe-area-inset-right)) calc(88px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left)); }
+      .app-main h1 { font-size:21px !important; }
+      .stats-grid { gap:8px; margin-bottom:16px; }
+      .stats-grid .card { padding:14px 10px !important; text-align:center; }
+      .stats-grid .stat-value { font-size:22px !important; }
+      .stats-grid .stat-sub { display:none; }
+      .dash-grid, .upgrade-grid { grid-template-columns:1fr !important; }
+      .card { border-radius:14px; }
+      .detail-header { flex-direction:column; }
+      .detail-header > div:last-child { text-align:left !important; }
+      .tab-row { overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+      .tab-row::-webkit-scrollbar { display:none; }
+      .tab-btn { flex:1; white-space:nowrap; padding:10px 14px; }
+      .interview-row { padding:16px !important; }
+      .interview-row .row-arrow { display:none; }
+      .history-meta { gap:12px !important; }
+      .mobile-only { display:block; }
+      /* Bottom tab bar (iOS style) */
+      .tab-bar { display:flex; position:fixed; left:0; right:0; bottom:0; z-index:100;
+        background:rgba(15,17,23,0.92); -webkit-backdrop-filter:blur(20px); backdrop-filter:blur(20px);
+        border-top:1px solid #1f2937; padding:6px env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+      .tab-bar-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; padding:6px 0 4px;
+        background:none; border:none; color:#6b7280; font-size:11px; font-weight:500; font-family:inherit; cursor:pointer; min-height:48px; }
+      .tab-bar-item .tab-icon { font-size:20px; line-height:1; filter:grayscale(1); opacity:0.7; }
+      .tab-bar-item.active { color:#06b6d4; }
+      .tab-bar-item.active .tab-icon { filter:none; opacity:1; }
+    }
+    /* Avoid "sticky" hover states after a tap on touch screens */
+    @media (hover: none) {
+      .btn-primary:hover { opacity:1; }
+      .interview-row:hover { border-color:#1f2937 !important; }
+      .interview-row:active { border-color:rgba(6,182,212,0.4) !important; }
+    }
   </style>
 </head>
 <body>
 
 <!-- LOADING SCREEN -->
-<div id="loading" style="min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;">
+<div id="loading" class="full-height" style="display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;">
   <div class="spinner"></div>
   <p style="color:#6b7280;font-size:14px;">Loading your portal...</p>
 </div>
 
 <!-- LOGIN PAGE -->
-<div id="login-page" style="display:none;min-height:100vh;align-items:center;justify-content:center;">
-  <div style="width:100%;max-width:420px;padding:24px;">
+<div id="login-page" class="full-height" style="display:none;align-items:center;justify-content:center;">
+  <div style="width:100%;max-width:420px;padding:calc(24px + env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom));">
     <div style="text-align:center;margin-bottom:40px;">
       <div style="margin-bottom:12px;">
         <span style="color:#06b6d4;font-weight:800;font-size:22px;">KES</span>
@@ -74,6 +139,16 @@
       <p style="color:#86efac;font-size:14px;margin:0;">We sent a sign-in link to <strong id="sent-email"></strong>. Click it to access your portal.</p>
     </div>
 
+    <!-- Code sign-in: needed when the portal runs as a Home Screen app on iPhone,
+         because email links always open in Safari rather than the installed app. -->
+    <div id="login-code-wrap" style="display:none;margin-top:16px;">
+      <label style="display:block;font-size:13px;color:#9ca3af;margin-bottom:6px;font-weight:500;text-align:center;">Or enter the code from the email</label>
+      <input type="text" id="login-code" class="otp-input" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="10" placeholder="••••••" />
+      <button class="btn-primary" id="verify-btn" style="width:100%;padding:13px;font-size:15px;margin-top:10px;" onclick="verifyCode()">Sign In</button>
+      <p id="code-error" style="color:#ef4444;font-size:13px;margin-top:10px;display:none;text-align:center;"></p>
+      <button onclick="resetLogin()" style="background:none;border:none;color:#6b7280;font-size:13px;cursor:pointer;margin:12px auto 0;display:block;">Use a different email</button>
+    </div>
+
     <p style="text-align:center;color:#4b5563;font-size:13px;margin-top:32px;">
       Only InterviewIQ subscribers can access this portal.<br/>
       <a href="https://kestechgroup.com/interviewiq" style="color:#06b6d4;text-decoration:none;">Learn more →</a>
@@ -89,7 +164,7 @@
 <div id="portal" style="display:none;">
 
   <!-- Top Nav -->
-  <nav style="border-bottom:1px solid #1f2937;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#0f1117;z-index:100;">
+  <nav class="top-nav">
     <div style="display:flex;align-items:center;gap:10px;">
       <span style="color:#06b6d4;font-weight:800;font-size:18px;">KES</span>
       <span style="color:#374151;">/</span>
@@ -104,7 +179,7 @@
 
   <div style="display:flex;">
     <!-- Sidebar -->
-    <aside style="width:220px;border-right:1px solid #1f2937;min-height:calc(100vh - 56px);padding:16px;flex-shrink:0;">
+    <aside class="app-sidebar">
       <a class="sidebar-link active" id="nav-dashboard" onclick="showView('dashboard')">⚡ Dashboard</a>
       <a class="sidebar-link" id="nav-history" onclick="showView('history')">📋 Interview History</a>
       <a class="sidebar-link" id="nav-upgrades" onclick="showView('upgrades')">🚀 Pro Upgrade</a>
@@ -120,7 +195,7 @@
     </aside>
 
     <!-- Main -->
-    <main style="flex:1;padding:28px;min-width:0;">
+    <main class="app-main">
 
       <!-- DASHBOARD VIEW -->
       <div id="view-dashboard" style="display:block;">
@@ -130,26 +205,26 @@
         </div>
 
         <!-- Stats -->
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;" id="stats-row">
+        <div class="stats-grid" id="stats-row">
           <div class="card" style="padding:20px;">
-            <div style="font-size:12px;color:#6b7280;margin-bottom:8px;">Latest Score</div>
-            <div class="gradient-text" style="font-size:32px;font-weight:800;" id="stat-latest">—</div>
-            <div style="font-size:12px;color:#4b5563;margin-top:4px;" id="stat-latest-label">No interviews yet</div>
+            <div style="font-size:12px;color:#6b7280;margin-bottom:8px;">Latest</div>
+            <div class="gradient-text stat-value" style="font-size:32px;font-weight:800;" id="stat-latest">—</div>
+            <div class="stat-sub" style="font-size:12px;color:#4b5563;margin-top:4px;" id="stat-latest-label">No interviews yet</div>
           </div>
           <div class="card" style="padding:20px;">
-            <div style="font-size:12px;color:#6b7280;margin-bottom:8px;">Total Interviews</div>
-            <div style="font-size:32px;font-weight:800;color:#818cf8;" id="stat-total">0</div>
-            <div style="font-size:12px;color:#4b5563;margin-top:4px;">All time</div>
+            <div style="font-size:12px;color:#6b7280;margin-bottom:8px;">Interviews</div>
+            <div class="stat-value" style="font-size:32px;font-weight:800;color:#818cf8;" id="stat-total">0</div>
+            <div class="stat-sub" style="font-size:12px;color:#4b5563;margin-top:4px;">All time</div>
           </div>
           <div class="card" style="padding:20px;">
-            <div style="font-size:12px;color:#6b7280;margin-bottom:8px;">Average Score</div>
-            <div style="font-size:32px;font-weight:800;color:#a78bfa;" id="stat-avg">—</div>
-            <div style="font-size:12px;color:#4b5563;margin-top:4px;">Across all sessions</div>
+            <div style="font-size:12px;color:#6b7280;margin-bottom:8px;">Average</div>
+            <div class="stat-value" style="font-size:32px;font-weight:800;color:#a78bfa;" id="stat-avg">—</div>
+            <div class="stat-sub" style="font-size:12px;color:#4b5563;margin-top:4px;">Across all sessions</div>
           </div>
         </div>
 
         <!-- Latest Report + Improvements -->
-        <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:16px;" id="dashboard-main">
+        <div class="dash-grid" id="dashboard-main">
           <!-- Latest Score Card -->
           <div class="card" style="padding:24px;" id="latest-score-card">
             <div id="no-interviews-state" style="text-align:center;padding:40px 20px;">
@@ -202,7 +277,7 @@
       <!-- DETAIL VIEW -->
       <div id="view-detail" style="display:none;">
         <button onclick="showView('history')" style="background:none;border:none;color:#6b7280;font-size:14px;cursor:pointer;margin-bottom:20px;padding:0;display:flex;align-items:center;gap:6px;">← Back to History</button>
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;">
+        <div class="detail-header">
           <div>
             <h1 style="font-size:22px;font-weight:700;margin:0 0 4px;" id="detail-title">—</h1>
             <p style="color:#6b7280;font-size:14px;margin:0;" id="detail-subtitle">—</p>
@@ -212,7 +287,7 @@
             <div style="font-size:14px;font-weight:600;" id="detail-status">—</div>
           </div>
         </div>
-        <div style="display:flex;gap:8px;margin-bottom:20px;">
+        <div class="tab-row">
           <button class="tab-btn active" id="tab-scores" onclick="switchTab('scores')">Scores</button>
           <button class="tab-btn" id="tab-improvements" onclick="switchTab('improvements')">Improvements</button>
           <button class="tab-btn" id="tab-transcript" onclick="switchTab('transcript')">Transcript</button>
@@ -222,6 +297,27 @@
           <div id="tab-content-improvements" style="display:none;"></div>
           <div id="tab-content-transcript" style="display:none;"></div>
         </div>
+      </div>
+
+      <!-- ACCOUNT VIEW (mobile tab bar) -->
+      <div id="view-account" style="display:none;">
+        <h1 style="font-size:24px;font-weight:700;margin:0 0 20px;">Account</h1>
+        <div class="card" style="padding:20px;margin-bottom:12px;">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <div id="account-avatar" style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#06b6d4,#3b82f6);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;flex-shrink:0;">?</div>
+            <div style="min-width:0;">
+              <div id="account-email" style="font-weight:600;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
+              <div id="account-since" style="color:#6b7280;font-size:13px;margin-top:2px;"></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:16px;">
+            <span id="account-plan-badge" class="tag-monthly">Monthly</span>
+            <span id="account-pro-badge" class="tag-pro" style="display:none;">Pro ✦</span>
+          </div>
+        </div>
+        <a href="mailto:Support@Kestechgroup.com" class="card" style="display:block;padding:16px 20px;margin-bottom:12px;color:#06b6d4;text-decoration:none;font-size:15px;">✉ Contact support</a>
+        <a href="https://kestechgroup.com/interviewiq" class="card" style="display:block;padding:16px 20px;margin-bottom:12px;color:#d1d5db;text-decoration:none;font-size:15px;">🎙️ Book an interview</a>
+        <button onclick="signOut()" class="card" style="display:block;width:100%;text-align:left;padding:16px 20px;color:#ef4444;font-size:15px;font-family:inherit;cursor:pointer;">Sign out</button>
       </div>
 
       <!-- UPGRADES VIEW -->
@@ -250,7 +346,7 @@
           <p style="color:#4b5563;font-size:12px;margin-top:14px;">After subscribing, come back here to unlock the Pro add-on.</p>
         </div>
 
-        <div id="upgrade-offer" style="display:none;grid-template-columns:1.2fr 1fr;gap:20px;">
+        <div id="upgrade-offer" class="upgrade-grid" style="display:none;">
           <div style="background:linear-gradient(135deg,#0f1f35,#0f1117);border:1px solid #06b6d4;border-radius:16px;padding:28px;">
             <span style="font-size:11px;background:rgba(6,182,212,0.15);color:#06b6d4;padding:3px 10px;border-radius:999px;font-weight:700;">ONE-TIME PAYMENT</span>
             <div style="font-size:52px;font-weight:800;margin:12px 0 4px;">$69</div>
@@ -313,6 +409,14 @@
 
     </main>
   </div>
+
+  <!-- Bottom tab bar (iPhone / small screens only) -->
+  <nav class="tab-bar" aria-label="Main">
+    <button class="tab-bar-item active" id="tabbar-dashboard" onclick="showView('dashboard')"><span class="tab-icon">⚡</span>Dashboard</button>
+    <button class="tab-bar-item" id="tabbar-history" onclick="showView('history')"><span class="tab-icon">📋</span>History</button>
+    <button class="tab-bar-item" id="tabbar-upgrades" onclick="showView('upgrades')"><span class="tab-icon">🚀</span>Pro</button>
+    <button class="tab-bar-item" id="tabbar-account" onclick="showView('account')"><span class="tab-icon">👤</span>Account</button>
+  </nav>
 </div>
 
 <script>
@@ -385,7 +489,48 @@ async function sendMagicLink() {
     document.getElementById('sent-email').textContent = email;
     document.getElementById('login-form-wrap').style.display = 'none';
     document.getElementById('login-success').style.display = 'block';
+    document.getElementById('login-code-wrap').style.display = 'block';
   }
+}
+
+// Sign in with the one-time code from the email. Requires the Supabase
+// "Magic Link" email template to include {{ .Token }}.
+async function verifyCode() {
+  const email = document.getElementById('sent-email').textContent;
+  const token = document.getElementById('login-code').value.replace(/\D/g, '');
+  const btn = document.getElementById('verify-btn');
+  const errEl = document.getElementById('code-error');
+
+  if (token.length < 6) {
+    errEl.textContent = 'Please enter the code from your email.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.textContent = 'Signing in...';
+  btn.disabled = true;
+  errEl.style.display = 'none';
+
+  const { error } = await sbClient.auth.verifyOtp({ email, token, type: 'email' });
+
+  if (error) {
+    errEl.textContent = error.message;
+    errEl.style.display = 'block';
+    btn.textContent = 'Sign In';
+    btn.disabled = false;
+  }
+  // On success, onAuthStateChange(SIGNED_IN) loads the portal.
+}
+
+function resetLogin() {
+  document.getElementById('login-form-wrap').style.display = 'block';
+  document.getElementById('login-success').style.display = 'none';
+  document.getElementById('login-code-wrap').style.display = 'none';
+  document.getElementById('login-code').value = '';
+  document.getElementById('code-error').style.display = 'none';
+  const btn = document.getElementById('login-btn');
+  btn.textContent = 'Send Magic Link';
+  btn.disabled = false;
 }
 
 function showError(msg) {
@@ -395,6 +540,7 @@ function showError(msg) {
 }
 
 async function signOut() {
+  if (!confirm('Sign out of InterviewIQ?')) return;
   await sbClient.auth.signOut();
 }
 
@@ -414,14 +560,21 @@ async function loadPortal() {
   // Update nav
   const initials = (currentUser.email || '?')[0].toUpperCase();
   document.getElementById('user-avatar').textContent = initials;
+  document.getElementById('account-avatar').textContent = initials;
   document.getElementById('sidebar-email').textContent = currentUser.email;
+  document.getElementById('account-email').textContent = currentUser.email;
 
   if (userData) {
-    document.getElementById('sidebar-since').textContent = 'Member since ' + formatDate(userData.created_at);
+    const since = 'Member since ' + formatDate(userData.created_at);
+    document.getElementById('sidebar-since').textContent = since;
+    document.getElementById('account-since').textContent = since;
     const plan = (userData.plan_type || 'single');
-    document.getElementById('nav-plan-badge').textContent = plan === 'monthly' ? 'Monthly' : 'Single';
+    const planLabel = plan === 'monthly' ? 'Monthly' : 'Single';
+    document.getElementById('nav-plan-badge').textContent = planLabel;
+    document.getElementById('account-plan-badge').textContent = planLabel;
     if (userData.pro_upgrade) {
       document.getElementById('nav-pro-badge').style.display = 'inline';
+      document.getElementById('account-pro-badge').style.display = 'inline';
     }
   }
 
@@ -489,7 +642,7 @@ function renderHistory() {
   list.innerHTML = interviews.map(iv => `
     <div class="card interview-row" style="padding:20px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;transition:border-color 0.15s;"
          onclick="openDetail('${iv.id}')">
-      <div style="display:flex;align-items:center;gap:20px;">
+      <div class="history-meta" style="display:flex;align-items:center;gap:20px;min-width:0;">
         <div style="text-align:center;min-width:60px;">
           <div class="gradient-text" style="font-size:30px;font-weight:800;">${iv.overall_score || '—'}</div>
           <div style="color:#4b5563;font-size:11px;">/100</div>
@@ -502,7 +655,7 @@ function renderHistory() {
       </div>
       <div style="display:flex;align-items:center;gap:12px;">
         <span style="font-size:13px;font-weight:600;" class="status-${statusClass(iv.status_label)}">${iv.status_label || ''}</span>
-        <span style="color:#4b5563;">→</span>
+        <span class="row-arrow" style="color:#4b5563;">→</span>
       </div>
     </div>
   `).join('');
@@ -586,13 +739,20 @@ function startProUpgrade() {
 
 // ─── NAVIGATION ───────────────────────────────────────────────────────────────
 function showView(view) {
-  ['dashboard','history','detail','upgrades'].forEach(v => {
+  ['dashboard','history','detail','upgrades','account'].forEach(v => {
     document.getElementById(`view-${v}`).style.display = v === view ? 'block' : 'none';
   });
+  // The detail view belongs to the History section for nav highlighting
+  const section = view === 'detail' ? 'history' : view;
   ['dashboard','history','upgrades'].forEach(v => {
     const el = document.getElementById(`nav-${v}`);
-    if (el) el.className = 'sidebar-link' + (v === view ? ' active' : '');
+    if (el) el.className = 'sidebar-link' + (v === section ? ' active' : '');
   });
+  ['dashboard','history','upgrades','account'].forEach(v => {
+    const el = document.getElementById(`tabbar-${v}`);
+    if (el) el.className = 'tab-bar-item' + (v === section ? ' active' : '');
+  });
+  window.scrollTo(0, 0);
 
   // Handle pro upgrade view — gating:
   //   • Pro already owned → show "You're a Pro member"
@@ -651,6 +811,9 @@ function formatDate(dateStr) {
 // Allow Enter key on login
 document.getElementById('login-email').addEventListener('keydown', e => {
   if (e.key === 'Enter') sendMagicLink();
+});
+document.getElementById('login-code').addEventListener('keydown', e => {
+  if (e.key === 'Enter') verifyCode();
 });
 
 // Start

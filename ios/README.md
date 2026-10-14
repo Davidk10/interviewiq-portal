@@ -14,7 +14,7 @@ The `.xcodeproj` is generated from `project.yml` and is not committed. Change `p
 
 ## Sign-in
 
-Members sign in with the 6-digit code from the Supabase "Magic link or OTP" email. That email template must include `{{ .Token }}`.
+Members sign in with the code from the Supabase "Magic link or OTP" email. That email template must include `{{ .Token }}`. The code length (currently 8) is set in Supabase under Authentication → Sign In / Providers → Email → Email OTP Length, and must match `AppConfig.signInCodeLength`.
 
 ## Layout
 

@@ -15,7 +15,7 @@ struct SignInView: View {
     @State private var resendAvailableAt = Date.distantPast
     @FocusState private var focus: Field?
 
-    static let codeLength = 6
+    static let codeLength = AppConfig.signInCodeLength
 
     var body: some View {
         ScrollView {
@@ -169,7 +169,7 @@ struct SignInView: View {
     }
 }
 
-/// Six boxes backed by one hidden text field, so iOS can autofill the code from Mail.
+/// One box per digit, backed by a hidden text field, so iOS can autofill the code from Mail.
 private struct CodeField: View {
     @Binding var code: String
     let length: Int
@@ -188,13 +188,13 @@ private struct CodeField: View {
                 }
                 .accessibilityLabel("Sign-in code")
 
-            HStack(spacing: 10) {
+            HStack(spacing: length > 6 ? 6 : 10) {
                 ForEach(0..<length, id: \.self) { index in
                     let chars = Array(code)
                     let isActive = index == chars.count
                     Text(index < chars.count ? String(chars[index]) : "")
-                        .font(.title.weight(.bold).monospacedDigit())
-                        .frame(maxWidth: .infinity, minHeight: 58)
+                        .font((length > 6 ? Font.title2 : Font.title).weight(.bold).monospacedDigit())
+                        .frame(maxWidth: .infinity, minHeight: 54)
                         .background(Theme.cardRaised, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
                             .strokeBorder(isActive ? Theme.cyan : Color(hex: 0x374151), lineWidth: isActive ? 2 : 1))

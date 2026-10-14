@@ -78,12 +78,12 @@ struct ReportView: View {
     }
 
     @ViewBuilder private var transcript: some View {
-        if model.profile?.hasPro != true {
+        if model.profile?.isMember != true {
             VStack(spacing: 12) {
                 Image(systemName: "lock.fill").font(.title).foregroundStyle(Theme.purple)
-                Text("Transcripts are a Pro feature")
+                Text("Transcripts are for members")
                     .font(.headline)
-                Text("Unlock Pro to read the full conversation from this interview.")
+                Text("Unlimited Monthly members can read the full conversation from every interview.")
                     .font(.subheadline)
                     .foregroundStyle(Theme.textMuted)
                     .multilineTextAlignment(.center)

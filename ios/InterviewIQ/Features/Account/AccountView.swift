@@ -26,13 +26,14 @@ struct AccountView: View {
                     HStack(spacing: 8) {
                         if let profile = model.profile {
                             Pill(text: profile.planLabel, color: Theme.cyan)
-                            if profile.hasPro { Pill(text: "Pro", color: Theme.purple) }
                         }
                     }
                 }
 
                 Section {
-                    Link(destination: AppConfig.bookInterviewURL) {
+                    Button {
+                        model.startBooking()
+                    } label: {
                         Label("Book an interview", systemImage: "phone.arrow.up.right")
                     }
                     Link(destination: AppConfig.supportURL) {

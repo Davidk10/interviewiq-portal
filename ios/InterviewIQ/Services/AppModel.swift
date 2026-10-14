@@ -17,6 +17,8 @@ final class AppModel {
     private(set) var interviews: [Interview] = []
     private(set) var isRefreshing = false
     var loadError: String?
+    /// Set to show the booking screen from anywhere in the app.
+    var bookingRequest: BookingRequest?
 
     private var authTask: Task<Void, Never>?
 
@@ -63,6 +65,10 @@ final class AppModel {
         } catch {
             loadError = "Couldn't load your interviews. Pull down to try again."
         }
+    }
+
+    func startBooking(with draft: JobDraft? = nil) {
+        bookingRequest = BookingRequest(draft: draft)
     }
 
     // MARK: Auth

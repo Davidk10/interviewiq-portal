@@ -3,7 +3,6 @@ import Charts
 
 struct DashboardView: View {
     @Environment(AppModel.self) private var model
-    @Binding var selectedTab: MainTabView.Tab
 
     var body: some View {
         NavigationStack {
@@ -17,13 +16,13 @@ struct DashboardView: View {
                             .buttonStyle(.plain)
                         if model.interviews.scored.count >= 2 { trendCard }
                         improvements(latest)
+                        bookButton
                     } else {
                         EmptyStateView(symbol: "waveform.circle",
                                        title: "No interviews yet",
                                        message: "Your interview reports will appear here after your first session.")
                             .card()
-                        Link("Book an Interview", destination: AppConfig.bookInterviewURL)
-                            .buttonStyle(.primary)
+                        bookButton
                     }
                 }
                 .padding(.horizontal)
@@ -125,17 +124,17 @@ struct DashboardView: View {
             } else {
                 ForEach(interview.notes) { NoteRow(text: $0.note) }
             }
-            if let profile = model.profile, profile.isMonthly, !profile.hasPro {
-                Button {
-                    selectedTab = .pro
-                } label: {
-                    Text("Get your full coaching plan with Pro")
-                }
-                .buttonStyle(.primary)
-                .padding(.top, 4)
-            }
         }
         .card()
+    }
+
+    private var bookButton: some View {
+        Button {
+            model.startBooking()
+        } label: {
+            Label("Book an Interview", systemImage: "phone.fill")
+        }
+        .buttonStyle(.primary)
     }
 
     private func errorBanner(_ message: String) -> some View {

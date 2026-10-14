@@ -9,6 +9,5 @@ enum AppConfig {
     static let signInCodeLength = 8
 
     static let supportEmail = "Support@Kestechgroup.com"
-    static let bookInterviewURL = URL(string: "https://kestechgroup.com/interviewiq")!
     static let supportURL = URL(string: "mailto:Support@Kestechgroup.com")!
 }

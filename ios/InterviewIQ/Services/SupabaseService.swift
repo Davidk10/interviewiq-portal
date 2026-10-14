@@ -13,7 +13,7 @@ enum InterviewRepository {
     static func profile(userID: UUID) async throws -> UserProfile? {
         let rows: [UserProfile] = try await supabase
             .from("users")
-            .select("id, email, first_name, last_name, plan_type, subscription_status, pro_upgrade, created_at")
+            .select("id, email, first_name, last_name, phone, plan_type, account_type, subscription_status, created_at")
             .eq("id", value: userID.uuidString)
             .limit(1)
             .execute()

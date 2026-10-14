@@ -6,24 +6,37 @@ struct UserProfile: Decodable, Equatable {
     let email: String
     let firstName: String?
     let lastName: String?
+    let phone: String?
     let planType: String?
+    let accountType: String?
     let subscriptionStatus: String?
-    let proUpgrade: Bool?
     let createdAt: Date?
 
     enum CodingKeys: String, CodingKey {
-        case id, email
+        case id, email, phone
         case firstName = "first_name"
         case lastName = "last_name"
         case planType = "plan_type"
+        case accountType = "account_type"
         case subscriptionStatus = "subscription_status"
-        case proUpgrade = "pro_upgrade"
         case createdAt = "created_at"
     }
 
-    var isMonthly: Bool { planType?.lowercased() == "monthly" }
-    var hasPro: Bool { proUpgrade == true }
-    var planLabel: String { isMonthly ? "Unlimited Monthly" : "Single Session" }
+    /// Same rule as the web portal's `isMonthlyMember()` / the `user_is_member` SQL function.
+    var isMember: Bool { accountType == "monthly" && subscriptionStatus == "active" }
+
+    /// Same rule `book_monthly_interview` enforces on the server.
+    var canBookInterviews: Bool {
+        planType == "monthly" && ["active", "past_due"].contains(subscriptionStatus ?? "")
+    }
+
+    var planLabel: String {
+        switch accountType {
+        case "monthly": "Unlimited Monthly"
+        case "recruiter": "Recruiter"
+        default: "Free"
+        }
+    }
 }
 
 struct InterviewScore: Decodable, Equatable, Identifiable {

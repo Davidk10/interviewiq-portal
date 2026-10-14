@@ -36,25 +36,30 @@ struct RootView: View {
 }
 
 struct MainTabView: View {
-    enum Tab: Hashable { case dashboard, history, pro, account }
+    enum Tab: Hashable { case dashboard, history, search, account }
 
+    @Environment(AppModel.self) private var model
     @State private var selection: Tab = .dashboard
 
     var body: some View {
         TabView(selection: $selection) {
-            DashboardView(selectedTab: $selection)
+            DashboardView()
                 .tabItem { Label("Dashboard", systemImage: "bolt.fill") }
                 .tag(Tab.dashboard)
             HistoryView()
                 .tabItem { Label("History", systemImage: "list.bullet.rectangle") }
                 .tag(Tab.history)
-            ProView()
-                .tabItem { Label("Pro", systemImage: "sparkles") }
-                .tag(Tab.pro)
+            SearchView()
+                .tabItem { Label("Search", systemImage: "magnifyingglass") }
+                .tag(Tab.search)
             AccountView()
                 .tabItem { Label("Account", systemImage: "person.crop.circle") }
                 .tag(Tab.account)
         }
         .sensoryFeedback(.selection, trigger: selection)
+        .sheet(item: Bindable(model).bookingRequest) { request in
+            BookInterviewView(initialDraft: request.draft)
+                .environment(model)
+        }
     }
 }
